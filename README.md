@@ -5,7 +5,7 @@
 Logs under the info tag\
 Output: [INFO]  [12:30:00] Text
 ```
-log_info(const char *message, ...)
+log_info(const char *format, ...)
 ```
 ### Error logging
 
@@ -19,7 +19,7 @@ log_error(char *format, ...)
 Logs under the warn tag\
 Output: [WARN]  [12:30:00] Text
 ```
-log_warn(const char *message, ...)
+log_warn(const char *format, ...)
 ```
 ## Utility functions
 ### Catch NULL
