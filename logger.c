@@ -5,9 +5,7 @@
 #include <time.h>
 #include <math.h>
 
-/* Whether logging functions are enabled
- * !! TURN OFF FOR DEPLOYMENT !!
- */
+//Whether logging functions are enabled
 static int log_enabled = false;
 
 /**
@@ -16,7 +14,7 @@ static int log_enabled = false;
  * @param enabled sets the mode of the logger
  * @return if log is enabled
  */
-bool log_enable(bool enabled) {
+int log_enable(int enabled) {
     log_enabled = enabled;
     return log_enabled;
 }
@@ -29,9 +27,10 @@ bool log_enable(bool enabled) {
  */
 void print_format_int(struct _iobuf *stream, int val, int min_length) {
     for (int i = 1; i < min_length; i++) {
-        if (val < pow(10, i)) { //when i = 1 val < 10
+        if (val < pow(10, i))
             fprintf(stream, "%d", 0);
-        }
+        else
+            break;
     }
     fprintf(stream, "%d", val);
 }
@@ -61,7 +60,7 @@ void print_time(struct _iobuf *stream) {
 int log_info(const char *format, ...) {
     if (!log_enabled) return -1;
 
-    fprintf(stdout, "[INFO]");
+    fprintf(stdout, "[INFO]  ");
     print_time(stdout);
 
     va_list argument_pointer;
@@ -81,7 +80,27 @@ int log_info(const char *format, ...) {
  */
 int log_error(char *format, ...) {
     if (!log_enabled) return -1;
-    fprintf(stdout, "[ERROR]");
+    fprintf(stdout, "[ERROR] ");
+    print_time(stdout);
+
+    va_list argument_pointer;
+    va_start(argument_pointer, format);
+    int retVal = vfprintf(stdout, format, argument_pointer);
+    va_end(argument_pointer);
+
+    fprintf(stdout, "\n");
+    return retVal;
+}
+
+/**
+ * Logs warn to console if log_enable(bool) is set to true
+ * @param format String to print with formatting
+ * @param ... Argument pointers for replacing the formatted string
+ * @return
+ */
+int log_warn(char *format, ...) {
+    if (!log_enabled) return -1;
+    fprintf(stdout, "[WARN]  ");
     print_time(stdout);
 
     va_list argument_pointer;
@@ -100,9 +119,9 @@ int log_error(char *format, ...) {
  * @param val Input value of any type to check
  * @return bool depending on whether val is NULL
  */
-bool catch_null_pointer(char* file, int line, void* val) {
+int catch_null_pointer(char* file, int line, void* val) {
     if (val == NULL) {
-        log_error("Null Pointer at %s, %d", file, line);
+        log_error("Null Pointer at file %s, line %d", file, line);
         return true;
     }
 
