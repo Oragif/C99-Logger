@@ -1,15 +1,22 @@
-# C99-Logger
+# Logger - C99
 
-### Logging functions
+## Logging functions
+### Info logging
+Logs under the info tag\
+Output: [INFO][12:30:00] Text
 ```
-Logs under the info tag
 log_info(const char *message, ...)
+```
+### Error logging
 
-Logs under the error tag
+Logs under the error tag\
+Output: [Error][12:30:00] Text
+```
 log_error(char *format, ...)
 ```
-### Utility functions
+## Utility functions
+### Catch NULL
+Checks if any val is NULL and logs error if NULL
 ```
-Checks if a any val is null and throws error if so
 catch_null(void* val)
 ```
