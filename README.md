@@ -6,7 +6,7 @@ log_start(int to_console, int to_file, int date_file);
 ```
 ## Logging functions
 ### Info logging to console and file
-Output: '[12:30:00] [TAG/file] Text'
+Output: '[12:30:00] [TAG/file:line] Text'
 ```
 TAG: INFO - log_info(const char *format, ...)
 TAG: ERROR - log_error(char *format, ...)
