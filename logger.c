@@ -57,50 +57,10 @@ void print_time(struct _iobuf *stream) {
  * @param ... Argument pointers for replacing the formatted string
  * @return
  */
-int log_info(const char *format, ...) {
+int logger(char* tag, const char *format, ...) {
     if (!log_enabled) return -1;
 
-    fprintf(stdout, "[INFO]  ");
-    print_time(stdout);
-
-    va_list argument_pointer;
-    va_start(argument_pointer, format);
-    int retVal = vfprintf(stdout, format, argument_pointer);
-    va_end(argument_pointer);
-
-    fprintf(stdout, "\n");
-    return retVal;
-}
-
-/**
- * Logs errors to console if log_enable(bool) is set to true
- * @param format String to print with formatting
- * @param ... Argument pointers for replacing the formatted string
- * @return
- */
-int log_error(char *format, ...) {
-    if (!log_enabled) return -1;
-    fprintf(stdout, "[ERROR] ");
-    print_time(stdout);
-
-    va_list argument_pointer;
-    va_start(argument_pointer, format);
-    int retVal = vfprintf(stdout, format, argument_pointer);
-    va_end(argument_pointer);
-
-    fprintf(stdout, "\n");
-    return retVal;
-}
-
-/**
- * Logs warn to console if log_enable(bool) is set to true
- * @param format String to print with formatting
- * @param ... Argument pointers for replacing the formatted string
- * @return
- */
-int log_warn(char *format, ...) {
-    if (!log_enabled) return -1;
-    fprintf(stdout, "[WARN]  ");
+    fprintf(stdout, "%s", tag);
     print_time(stdout);
 
     va_list argument_pointer;

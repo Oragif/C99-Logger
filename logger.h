@@ -5,10 +5,11 @@
 int log_enable(int enabled);
 
 //Log functions
+int logger(char* type, const char *format, ...);
 
-int log_info(const char *message, ...);
-int log_error(char *format, ...);
-int log_warn(char *format, ...);
+#define log_info(format, ...) logger("[INFO]  ", format, __VA_ARGS__);
+#define log_error(format, ...) logger("[ERROR] ", format, __VA_ARGS__);
+#define log_warn(format, ...) logger("[WARN]  ", format, __VA_ARGS__);
 
 //null catcher
 
