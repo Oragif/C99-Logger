@@ -3,6 +3,14 @@
 #include <stdio.h>
 typedef struct _iobuf *STREAM;
 
+typedef enum {
+    A_SHORT,
+    A_INT,
+    A_LONG,
+    A_FLOAT,
+    A_DOUBLE
+} array_type;
+
 /* ====================================================================
  *                        Settings & file utility
  * ====================================================================
@@ -21,7 +29,6 @@ void log_start(int to_console, int to_file, int date_file);
  * ====================================================================
  */
 
-//Log functions
 int logger(STREAM stream, char* file_name, int line, char* type, const char *format, ...);
 
 /**
@@ -55,6 +62,14 @@ int logger(STREAM stream, char* file_name, int line, char* type, const char *for
  * @return output of logger
  */
 #define log_custom(name, format, ...) logger(stdout, __FILE__, __LINE__, name, format, ##__VA_ARGS__)
+
+int logger_array(STREAM stream, char* file_name, int line, void* arr, array_type type);
+/**
+ * Logs an array to console/file if enabled
+ * @param arr the array see array_type for supported types
+ * @param type use array_type ex. 'A_INT', A_'type'
+ */
+#define log_array(arr, type) logger_array(stdout, __FILE__, __LINE__, arr, type)
 
 /* ====================================================================
  *                              Utility

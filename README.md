@@ -13,7 +13,17 @@ TAG: ERROR - log_error(char *format, ...)
 TAG: WARN - log_warn(const char *format, ...)
 TAG: Custom - log_custom(TAG, const char *format, ...)
 ```
-
+#### Log array
+```
+TAG: ARRAY - log_array(array, array_type)
+Output: '[12:30:00] [TAG/file] TYPE Array = {*}'
+Array type:
+    A_SHORT
+    A_INT
+    A_LONG
+    A_FLOAT
+    A_DOUBLE
+```
 ## Utility functions
 ### Catch NULL
 Checks if any val is NULL and logs error if NULL

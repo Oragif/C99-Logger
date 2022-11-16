@@ -152,6 +152,7 @@ void log_start(int to_console, int to_file, int date_file) {
 }
 
 /**
+ * !!!! Should not be used use log_'type' instead !!!!
  * Logs info to console if log_enable(bool) is set to true
  * @param format String to print with formatting
  * @param ... Argument pointers for replacing the formatted string
@@ -206,4 +207,124 @@ int catch_null_pointer(char* path, int line, void* val) {
     }
 
     return false;
+}
+
+/**
+ * Prints an array to stream
+ * @param stream output stream
+ * @param length of array
+ * @param format format for fprintf
+ * @param arr the array to print
+ * @param f print function
+ */
+void print_array(STREAM stream, int length, char* format, void* arr, void (*f)(STREAM, void*, int)) {
+    if (catch_null(arr)) return;
+    fprintf(stream, "{");
+    f(stream, arr, 0);
+    for (int i = 1; i <= length; ++i) {
+        fprintf(stream, ", ");
+        f(stream, arr, i);
+    }
+    fprintf(stream, "}\n");
+}
+
+//============================== Array printer utility functions ==============================
+void print_float_from_array(STREAM stream, void* arr, int index){
+    fprintf(stream, "%f", ((float*)arr)[index]);
+}
+
+void print_arr_float(STREAM stream, float* arr) {
+    print_array(stream, sizeof(arr), "%f", arr, print_float_from_array);
+}
+
+void print_double_from_array(STREAM stream, void* arr, int index){
+    fprintf(stream, "%lf", ((double*)arr)[index]);
+}
+
+void print_arr_double(STREAM stream, double* arr) {
+    print_array(stream, sizeof(arr), "%lf", arr, print_double_from_array);
+}
+
+void print_short_from_array(STREAM stream, void* arr, int index){
+    fprintf(stream, "%hd", ((short*)arr)[index]);
+}
+
+void print_arr_short(STREAM stream, short* arr) {
+    print_array(stream, sizeof(arr), "%hd", arr, print_short_from_array);
+}
+
+void print_int_from_array(STREAM stream, void* arr, int index){
+    fprintf(stream, "%d", ((int*)arr)[index]);
+}
+
+void print_arr_int(STREAM stream, int* arr) {
+    print_array(stream, sizeof(arr), "%d", arr, print_int_from_array);
+}
+
+void print_long_from_array(STREAM stream, void* arr, int index){
+    fprintf(stream, "%ld", ((long*)arr)[index]);
+}
+
+void print_arr_long(STREAM stream, long* arr) {
+    print_array(stream, sizeof(arr), "%ld", arr, print_long_from_array);
+}
+//============================= /Array printer utility functions/ =============================
+
+/**
+ * Selects which array printer function to use depending on array_type
+ * @param stream output stream
+ * @param arr array to print
+ * @param type of array_type
+ * @return bool depending on success
+ */
+bool print_arr_selector(STREAM stream, void* arr, array_type type) {
+    switch (type) {
+        case A_FLOAT:
+            fprintf(stream, "Float array = ");
+            print_arr_float(stream, (float*) arr);
+            return true;
+        case A_DOUBLE:
+            fprintf(stream, "Double array = ");
+            print_arr_double(stream, (double*) arr);
+            return true;
+        case A_SHORT:
+            fprintf(stream, "Short array = ");
+            print_arr_short(stream, (short*) arr);
+            return true;
+        case A_INT:
+            fprintf(stream, "Int array = ");
+            print_arr_int(stream, (int*) arr);
+            return true;
+        case A_LONG:
+            fprintf(stream, "Long array = ");
+            print_arr_long(stream, (long*) arr);
+            return true;
+        default:
+            return false;
+    }
+}
+/**
+ * Should not be used, use log_array instead
+ */
+int logger_array(STREAM stream, char* file_name, int line, void* arr, array_type type) {
+    if (!log_enabled && !log_file_enabled) return -1;
+    int retVal;
+
+    //Log info to console if enabled
+    if (log_enabled) {
+        fprint_info(stream, file_name, line, "ARRAY");
+        retVal = print_arr_selector(stream, arr, type);
+    }
+
+    //Append info to file if enabled
+    if (log_file_enabled) {
+        FILE *file = open_file(log_file_path, "a");
+        if (file != NULL) {
+            fprint_info(file, file_name, line, "ARRAY");
+            retVal = print_arr_selector(file, arr, type);
+        }
+        fclose(file);
+    }
+
+    return retVal;
 }
