@@ -81,15 +81,13 @@ void print_time(STREAM stream) {
     print_format_int(stream, local_time->tm_sec, 2);
 }
 
-void fprint_info(STREAM stream, char* path, char* tag) {
-    //Print current time
+void fprint_info(STREAM stream, char* path, int line, char* tag) {
     fprintf(stream, "[");
     print_time(stream);
     //Get name of file log was called from
     char* dup_path = strdup(path);
     char* base_name = basename(dup_path);
-    //Print rest of info
-    fprintf(stream, "] [%s/%s] ", tag, base_name);
+    fprintf(stream, "] [%s/%s:%d] ", tag, base_name, line);
 }
 
 //Load file or explode
@@ -97,7 +95,7 @@ FILE* open_file(char* path, char* mode) {
     FILE* file = fopen(path, mode);
     if(file == NULL) {
         log_to_file(false);
-        fprint_info(stdout, "logger.c", "[ERROR] ");
+        fprint_info(stdout, "logger.c", 98, "[ERROR] ");
         fprintf(stdout, "File at %s couldn't be loaded\n", path);
         return NULL;
     }
@@ -159,7 +157,7 @@ void log_start(int to_console, int to_file, int date_file) {
  * @param ... Argument pointers for replacing the formatted string
  * @return output of vfprintf
  */
-int logger(STREAM stream, char* file_name, char* tag, const char *format, ...) {
+int logger(STREAM stream, char* file_name, int line, char* tag, const char *format, ...) {
     if (!log_enabled && !log_file_enabled) return -1;
     int retVal;
 
@@ -169,7 +167,7 @@ int logger(STREAM stream, char* file_name, char* tag, const char *format, ...) {
 
     //Log info to console if enabled
     if (log_enabled) {
-        fprint_info(stream, file_name, tag);
+        fprint_info(stream, file_name, line, tag);
         retVal = vfprintf(stream, format, argument_pointer);
         fprintf(stream, "\n");
     }
@@ -178,7 +176,7 @@ int logger(STREAM stream, char* file_name, char* tag, const char *format, ...) {
     if (log_file_enabled) {
         FILE *file = open_file(log_file_path, "a");
         if (file != NULL) {
-            fprint_info(file, file_name, tag);
+            fprint_info(file, file_name, line, tag);
             retVal = vfprintf(file, format, argument_pointer);
             fprintf(file, "\n");
         }
@@ -189,7 +187,6 @@ int logger(STREAM stream, char* file_name, char* tag, const char *format, ...) {
 
     return retVal;
 }
-
 
 /**
  * Returns bool depending on val being null, error logs if it is
