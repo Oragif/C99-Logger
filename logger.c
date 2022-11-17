@@ -107,7 +107,7 @@ FILE* open_file(char* path, char* mode) {
     FILE* file = fopen(path, mode);
     if(file == NULL) {
         log_to_file(false);
-        fprint_info(stdout, "logger.c", 98, "[ERROR] ");
+        fprint_info(stdout, "logger.c", 110, "ERROR");
         fprintf(stdout, "File at %s couldn't be loaded\n", path);
         return NULL;
     }
@@ -166,6 +166,10 @@ void log_start(int to_console, int to_file, int date_file) {
 /**
  * !!! Should not be used use log_'type' instead !!!\n
  * Logs info to console if log_enable(bool) is set to true
+ * @param stream output stream
+ * @param file_name where the functions is called from
+ * @param line where the functions is called from
+ * @param tag to print under
  * @param format String to print with formatting
  * @param ... Argument pointers for replacing the formatted string
  * @return output of vfprintf
@@ -206,6 +210,7 @@ int logger(STREAM stream, char* file_name, int line, char* tag, const char *form
  * Returns bool depending on val being null, error logs if it is
  * @param path Current path function is called from
  * @param line Current line in path
+ * @param name of the pointer
  * @param val Input value of any type to check
  * @return bool depending on whether val is NULL
  */
@@ -277,6 +282,7 @@ void print_int_bool_from_array(STREAM stream, void* arr, int index){
         fprintf(stream, "%d", val);
 }
 //============================= /Array printer utility functions/ =============================
+
 /**
  * Selects which array printer function to use depending on array_type
  * @param stream output stream
@@ -313,8 +319,18 @@ bool print_arr_selector(STREAM stream, char* name, void* arr, int size, array_ty
             return false;
     }
 }
+
 /**
- * !!! Should not be used, use log_array instead !!!
+ * !!! Should not be used, use log_array instead !!!\n
+ * Logs array to console if log_enable(bool) is set to true
+ * @param stream output stream
+ * @param file_name where the functions is called from
+ * @param line where the functions is called from
+ * @param name of the array
+ * @param arr the array to print
+ * @param size of the array
+ * @param type of the array using array_type
+ * @return true if successful otherwise false
  */
 int logger_array(STREAM stream, char* file_name, int line, char* name, void* arr, int size, array_type type) {
     if (!log_enabled && !log_file_enabled) return -1;
