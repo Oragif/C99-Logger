@@ -15,9 +15,15 @@ TAG: Custom - log_custom(TAG, const char *format, ...)
 ```
 #### Log array
 ```
+Normal array:
 TAG: ARRAY - log_array(array, array_type)
+
+Pointer array, will catch null pointer:
+TAG: ARRAY - log_pointer_array(array, size, array_type)
+
 Output: '[12:30:00] [TAG/file] 'array name' = {*}'
 Array type:
+    A_BOOL - Both int and _Bool supported
     A_SHORT
     A_INT
     A_LONG

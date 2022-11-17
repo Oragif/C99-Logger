@@ -11,8 +11,8 @@
 static int log_enabled = false;
 
 /**
- * Change whether log will print to console
- * !!TURN OFF FOR DEPLOYMENT!!
+ * Change whether log will print to console\n
+ * !!! TURN OFF FOR DEPLOYMENT !!!
  * @param enabled sets the mode of the logger
  * @return if log is enabled
  */
@@ -40,12 +40,24 @@ static char* log_file_dir = "log";
 static char log_file_path[100];
 
 /**
- * Sets the name of where to save log file
- * @param name of where to save
+ * Sets the name of save log file \n
+ * Remember to call update_log_path();
+ * @param name of file
  * @return if log file is enabled
  */
 int set_log_file_name(char* name) {
     log_file_name = name;
+    return log_file_enabled;
+}
+
+/**
+ * Sets the dir to save to \n
+ * Remember to call update_log_path();
+ * @param dir of where to save to
+ * @return if log file is enabled
+ */
+int set_log_file_dir(char* dir) {
+    log_file_dir = dir;
     return log_file_enabled;
 }
 
@@ -152,7 +164,7 @@ void log_start(int to_console, int to_file, int date_file) {
 }
 
 /**
- * !!!! Should not be used use log_'type' instead !!!!
+ * !!! Should not be used use log_'type' instead !!!\n
  * Logs info to console if log_enable(bool) is set to true
  * @param format String to print with formatting
  * @param ... Argument pointers for replacing the formatted string
@@ -190,6 +202,7 @@ int logger(STREAM stream, char* file_name, int line, char* tag, const char *form
 }
 
 /**
+ * !!! Shouldn't be used us catch_null() instead !!!\n
  * Returns bool depending on val being null, error logs if it is
  * @param path Current path function is called from
  * @param line Current line in path
@@ -201,8 +214,7 @@ int catch_null_pointer(char* path, int line, char* name, void* val) {
         //Get name of path log was called from
         char* dup_path = strdup(path);
         char* base_name = basename(dup_path);
-
-        log_error("Null Pointer in %s, line: %d, var: %s", base_name, line, name);
+        logger(stdout, base_name, line, "NULLPTR","Null Pointer in %s, line: %d, var: %s", base_name, line, name);
         return true;
     }
 
@@ -212,16 +224,17 @@ int catch_null_pointer(char* path, int line, char* name, void* val) {
 /**
  * Prints an array to stream
  * @param stream output stream
+ * @param name of array
  * @param length of array
  * @param format format for fprintf
  * @param arr the array to print
  * @param f print function
  */
-void print_array(STREAM stream, int length, char* format, void* arr, void (*f)(STREAM, void*, int)) {
+void print_array(STREAM stream, char* name, int length, void* arr, void (*f)(STREAM, void*, int)) {
     if (catch_null(arr)) return;
-    fprintf(stream, "{");
+    fprintf(stream, "%s = {", name);
     f(stream, arr, 0);
-    for (int i = 1; i <= length; ++i) {
+    for (int i = 1; i < length; ++i) {
         fprintf(stream, ", ");
         f(stream, arr, i);
     }
@@ -233,87 +246,84 @@ void print_float_from_array(STREAM stream, void* arr, int index){
     fprintf(stream, "%f", ((float*)arr)[index]);
 }
 
-void print_arr_float(STREAM stream, float* arr) {
-    print_array(stream, sizeof(arr), "%f", arr, print_float_from_array);
-}
-
 void print_double_from_array(STREAM stream, void* arr, int index){
     fprintf(stream, "%lf", ((double*)arr)[index]);
-}
-
-void print_arr_double(STREAM stream, double* arr) {
-    print_array(stream, sizeof(arr), "%lf", arr, print_double_from_array);
 }
 
 void print_short_from_array(STREAM stream, void* arr, int index){
     fprintf(stream, "%hd", ((short*)arr)[index]);
 }
 
-void print_arr_short(STREAM stream, short* arr) {
-    print_array(stream, sizeof(arr), "%hd", arr, print_short_from_array);
-}
-
 void print_int_from_array(STREAM stream, void* arr, int index){
     fprintf(stream, "%d", ((int*)arr)[index]);
-}
-
-void print_arr_int(STREAM stream, int* arr) {
-    print_array(stream, sizeof(arr), "%d", arr, print_int_from_array);
 }
 
 void print_long_from_array(STREAM stream, void* arr, int index){
     fprintf(stream, "%ld", ((long*)arr)[index]);
 }
 
-void print_arr_long(STREAM stream, long* arr) {
-    print_array(stream, sizeof(arr), "%ld", arr, print_long_from_array);
+void print_bool_from_array(STREAM stream, void* arr, int index) {
+    int val = ((_Bool *) arr)[index];
+    char *boolean = (val == true) ? "True" :  "False";
+    fprintf(stream, "%s", boolean);
+}
+
+void print_int_bool_from_array(STREAM stream, void* arr, int index){
+    int val = ((int*)arr)[index];
+    char* boolean = (val == 1) ? "True" : (val == 0) ? "False" : NULL;
+    if (boolean != NULL)
+        fprintf(stream, "%s", boolean);
+    else
+        fprintf(stream, "%d", val);
 }
 //============================= /Array printer utility functions/ =============================
-
 /**
  * Selects which array printer function to use depending on array_type
  * @param stream output stream
+ * @param name name of array
  * @param arr array to print
+ * @param size size of array
  * @param type of array_type
  * @return bool depending on success
  */
-bool print_arr_selector(STREAM stream, char* name, void* arr, array_type type) {
+bool print_arr_selector(STREAM stream, char* name, void* arr, int size, array_type type) {
     switch (type) {
-        case A_FLOAT:
-            fprintf(stream, "%s = ", name);
-            print_arr_float(stream, (float*) arr);
+        case A_BOOL:
+            if (((int*)arr)[0] > 1)
+                print_array(stream, name, size, arr, print_bool_from_array);
+            else
+                print_array(stream, name, size, arr, print_int_bool_from_array);
             return true;
         case A_DOUBLE:
-            fprintf(stream, "%s = ", name);
-            print_arr_double(stream, (double*) arr);
-            return true;
-        case A_SHORT:
-            fprintf(stream, "%s = ", name);
-            print_arr_short(stream, (short*) arr);
+            print_array(stream, name, size, arr, print_double_from_array);
             return true;
         case A_INT:
-            fprintf(stream, "%s = ", name);
-            print_arr_int(stream, (int*) arr);
+            print_array(stream, name, size, arr, print_int_from_array);
+            return true;
+        case A_FLOAT:
+            print_array(stream, name, size, arr, print_float_from_array);
             return true;
         case A_LONG:
-            fprintf(stream, "%s = ", name);
-            print_arr_long(stream, (long*) arr);
+            print_array(stream, name, size, arr, print_long_from_array);
+            return true;
+        case A_SHORT:
+            print_array(stream, name, size, arr, print_short_from_array);
             return true;
         default:
             return false;
     }
 }
 /**
- * Should not be used, use log_array instead
+ * !!! Should not be used, use log_array instead !!!
  */
-int logger_array(STREAM stream, char* file_name, int line, char* name, void* arr, array_type type) {
+int logger_array(STREAM stream, char* file_name, int line, char* name, void* arr, int size, array_type type) {
     if (!log_enabled && !log_file_enabled) return -1;
     int retVal;
 
     //Log info to console if enabled
     if (log_enabled) {
         fprint_info(stream, file_name, line, "ARRAY");
-        retVal = print_arr_selector(stream, name, arr, type);
+        retVal = print_arr_selector(stream, name, arr, size, type);
     }
 
     //Append info to file if enabled
@@ -321,7 +331,7 @@ int logger_array(STREAM stream, char* file_name, int line, char* name, void* arr
         FILE *file = open_file(log_file_path, "a");
         if (file != NULL) {
             fprint_info(file, file_name, line, "ARRAY");
-            retVal = print_arr_selector(file, name, arr, type);
+            retVal = print_arr_selector(file, name, arr, size, type);
         }
         fclose(file);
     }
