@@ -196,13 +196,13 @@ int logger(STREAM stream, char* file_name, int line, char* tag, const char *form
  * @param val Input value of any type to check
  * @return bool depending on whether val is NULL
  */
-int catch_null_pointer(char* path, int line, void* val) {
+int catch_null_pointer(char* path, int line, char* name, void* val) {
     if (val == NULL) {
         //Get name of path log was called from
         char* dup_path = strdup(path);
         char* base_name = basename(dup_path);
 
-        log_error("Null Pointer in %s, line %d", base_name, line);
+        log_error("Null Pointer in %s, line: %d, var: %s", base_name, line, name);
         return true;
     }
 
@@ -277,26 +277,26 @@ void print_arr_long(STREAM stream, long* arr) {
  * @param type of array_type
  * @return bool depending on success
  */
-bool print_arr_selector(STREAM stream, void* arr, array_type type) {
+bool print_arr_selector(STREAM stream, char* name, void* arr, array_type type) {
     switch (type) {
         case A_FLOAT:
-            fprintf(stream, "Float array = ");
+            fprintf(stream, "%s = ", name);
             print_arr_float(stream, (float*) arr);
             return true;
         case A_DOUBLE:
-            fprintf(stream, "Double array = ");
+            fprintf(stream, "%s = ", name);
             print_arr_double(stream, (double*) arr);
             return true;
         case A_SHORT:
-            fprintf(stream, "Short array = ");
+            fprintf(stream, "%s = ", name);
             print_arr_short(stream, (short*) arr);
             return true;
         case A_INT:
-            fprintf(stream, "Int array = ");
+            fprintf(stream, "%s = ", name);
             print_arr_int(stream, (int*) arr);
             return true;
         case A_LONG:
-            fprintf(stream, "Long array = ");
+            fprintf(stream, "%s = ", name);
             print_arr_long(stream, (long*) arr);
             return true;
         default:
@@ -306,14 +306,14 @@ bool print_arr_selector(STREAM stream, void* arr, array_type type) {
 /**
  * Should not be used, use log_array instead
  */
-int logger_array(STREAM stream, char* file_name, int line, void* arr, array_type type) {
+int logger_array(STREAM stream, char* file_name, int line, char* name, void* arr, array_type type) {
     if (!log_enabled && !log_file_enabled) return -1;
     int retVal;
 
     //Log info to console if enabled
     if (log_enabled) {
         fprint_info(stream, file_name, line, "ARRAY");
-        retVal = print_arr_selector(stream, arr, type);
+        retVal = print_arr_selector(stream, name, arr, type);
     }
 
     //Append info to file if enabled
@@ -321,7 +321,7 @@ int logger_array(STREAM stream, char* file_name, int line, void* arr, array_type
         FILE *file = open_file(log_file_path, "a");
         if (file != NULL) {
             fprint_info(file, file_name, line, "ARRAY");
-            retVal = print_arr_selector(file, arr, type);
+            retVal = print_arr_selector(file, name, arr, type);
         }
         fclose(file);
     }

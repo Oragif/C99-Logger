@@ -63,25 +63,25 @@ int logger(STREAM stream, char* file_name, int line, char* type, const char *for
  */
 #define log_custom(name, format, ...) logger(stdout, __FILE__, __LINE__, name, format, ##__VA_ARGS__)
 
-int logger_array(STREAM stream, char* file_name, int line, void* arr, array_type type);
+int logger_array(STREAM stream, char* file_name, int line, char* name, void* arr, array_type type);
 /**
  * Logs an array to console/file if enabled
  * @param arr the array see array_type for supported types
  * @param type use array_type ex. 'A_INT', A_'type'
  */
-#define log_array(arr, type) logger_array(stdout, __FILE__, __LINE__, arr, type)
+#define log_array(arr, type) logger_array(stdout, __FILE__, __LINE__, #arr, arr, type)
 
 /* ====================================================================
  *                              Utility
  * ====================================================================
  */
-int catch_null_pointer(char* path, int line, void* val);
+int catch_null_pointer(char* path, int line, char* name, void* val);
 
 /**
  * Returns bool depending on val being null, error logs if it is
  * @param val Input value of any type to check
  */
-#define catch_null(val) catch_null_pointer(__FILE__, __LINE__, val)
+#define catch_null(val) catch_null_pointer(__FILE__, __LINE__, #val, val)
 
 void print_format_int(STREAM stream, int val, int min_length);
 void print_time(STREAM stream);
