@@ -40,24 +40,24 @@ static char* log_file_dir = "log";
 static char log_file_path[100];
 
 /**
- * Sets the name of save log file \n
- * Remember to call update_log_path();
+ * Sets the name of save log file
  * @param name of file
  * @return if log file is enabled
  */
 int set_log_file_name(char* name) {
     log_file_name = name;
+    update_log_path();
     return log_file_enabled;
 }
 
 /**
- * Sets the dir to save to \n
- * Remember to call update_log_path();
+ * Sets the dir to save to
  * @param dir of where to save to
  * @return if log file is enabled
  */
 int set_log_file_dir(char* dir) {
     log_file_dir = dir;
+    update_log_path();
     return log_file_enabled;
 }
 
@@ -131,6 +131,7 @@ void clear_log_file() {
  * Updates the path to log file, important to call if dir or name was changed
  */
 void update_log_path() {
+    mkdir(log_file_dir);
     strcpy(log_file_path, log_file_dir);
     strcat(log_file_path, "/");
     strcat(log_file_path, log_file_name);
@@ -146,7 +147,7 @@ void log_start(int to_console, int to_file, int date_file) {
     log_file_enabled = to_file;
     if (log_file_enabled == true) {
         //Try to create log folder
-        mkdir("log");
+        mkdir(log_file_dir);
 
         //If dated files are enabled update name with time and date stamp
         if (date_file) {
