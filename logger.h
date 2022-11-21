@@ -23,11 +23,8 @@ typedef enum {
 
 int log_enable(int enabled);
 int log_to_file(int enabled);
-int set_log_file_name(char* name);
-int set_log_file_dir(char* dir);
 
-void clear_log_file();
-void update_log_path();
+void update_log_path(char* name, char* dir);
 void log_start(int to_console, int to_file, int date_file);
 
 /* ====================================================================
@@ -86,7 +83,7 @@ int logger(STREAM stream, char* file_name, int line, char* type, const char *for
 
 #define size_of_array(array) (sizeof(array) / sizeof(array)[0])
 
-int logger_array(STREAM stream, char* file_name, int line, char* name, void* arr, int size, array_type type);
+int logger_array(STREAM stream, char* file_name, int line, char* name, void* array, int size, array_type type);
 /**
  * Logs an array to console/file if enabled
  * @param arr the array see array_type for supported types

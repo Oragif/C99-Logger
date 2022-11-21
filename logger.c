@@ -7,57 +7,24 @@
 #include <io.h>
 #include <libgen.h>
 
+//============== Logger Settings ===============
 //Whether logging functions are enabled
 static int log_enabled = false;
+//Whether logging to file functions are enabled
+static int log_file_enabled = false;
+//Log file location
+static char* log_file_name = "newest_log.txt";
+static char* log_file_dir = "log";
+static char log_file_path[100];
+//==============================================
 
-/**
- * Change whether log will print to console\n
- * !!! TURN OFF FOR DEPLOYMENT !!!
- * @param enabled sets the mode of the logger
- * @return if log is enabled
- */
 int log_enable(int enabled) {
     log_enabled = enabled;
     return log_enabled;
 }
 
-//Whether logging to file functions are enabled
-static int log_file_enabled = false;
-
-/**
- * Change whether log will save to file
- * @param enabled sets the mode of the log to file
- * @return if log to file is enabled
- */
 int log_to_file(int enabled) {
     log_file_enabled = enabled;
-    return log_file_enabled;
-}
-
-//Log file location
-static char* log_file_name = "newest_log.txt";
-static char* log_file_dir = "log";
-static char log_file_path[100];
-
-/**
- * Sets the name of save log file
- * @param name of file
- * @return if log file is enabled
- */
-int set_log_file_name(char* name) {
-    log_file_name = name;
-    update_log_path();
-    return log_file_enabled;
-}
-
-/**
- * Sets the dir to save to
- * @param dir of where to save to
- * @return if log file is enabled
- */
-int set_log_file_dir(char* dir) {
-    log_file_dir = dir;
-    update_log_path();
     return log_file_enabled;
 }
 
@@ -93,13 +60,28 @@ void print_time(STREAM stream) {
     print_format_int(stream, local_time->tm_sec, 2);
 }
 
+/**
+ * Changes pointer of path to the filename instead of full path
+ * @param path of file
+ */
+void get_base_name(char **path) {
+    char* dup_path = strdup(*path);
+    *path = basename(dup_path);
+}
+
+/**
+ * Print info '[hh:mm:ss] [TAG/File:Line]'
+ * @param stream output stream
+ * @param path of file, function is called from
+ * @param line of file, function is called from
+ * @param tag to print under
+ */
 void fprint_info(STREAM stream, char* path, int line, char* tag) {
     fprintf(stream, "[");
     print_time(stream);
     //Get name of file log was called from
-    char* dup_path = strdup(path);
-    char* base_name = basename(dup_path);
-    fprintf(stream, "] [%s/%s:%d] ", tag, base_name, line);
+    get_base_name(&path);
+    fprintf(stream, "] [%s/%s:%d] ", tag, path, line);
 }
 
 //Load file or explode
@@ -107,7 +89,7 @@ FILE* open_file(char* path, char* mode) {
     FILE* file = fopen(path, mode);
     if(file == NULL) {
         log_to_file(false);
-        fprint_info(stdout, "logger.c", 110, "ERROR");
+        fprint_info(stdout, "logger.c", 118, "ERROR");
         fprintf(stdout, "File at %s couldn't be loaded\n", path);
         return NULL;
     }
@@ -115,9 +97,20 @@ FILE* open_file(char* path, char* mode) {
 }
 
 /**
- * Clears the currently used log file
+ * Updates log file path, and creates a new empty file in path of ../dir/name.txt
+ * @param name file name
+ * @param dir directory to save log files to (Depth 1)
  */
-void clear_log_file() {
+void update_log_path(char* name, char* dir) {
+    log_file_dir  = dir;
+    log_file_name = name;
+
+    strcpy(log_file_path, log_file_dir);
+    strcat(log_file_path, "/");
+    strcat(log_file_path, log_file_name);
+
+    mkdir(log_file_dir);
+
     FILE* file = open_file(log_file_path, "w");
     if (file != NULL) {
         fprintf(file, "===== Log started at ");
@@ -128,16 +121,6 @@ void clear_log_file() {
 }
 
 /**
- * Updates the path to log file, important to call if dir or name was changed
- */
-void update_log_path() {
-    mkdir(log_file_dir);
-    strcpy(log_file_path, log_file_dir);
-    strcat(log_file_path, "/");
-    strcat(log_file_path, log_file_name);
-}
-
-/**
  * Enables parts or all of logger
  * @param to_console bool, whether to log to console
  * @param to_file bool, whether to save to log file
@@ -145,21 +128,20 @@ void update_log_path() {
  */
 void log_start(int to_console, int to_file, int date_file) {
     log_file_enabled = to_file;
-    if (log_file_enabled == true) {
-        //Try to create log folder
-        mkdir(log_file_dir);
 
+    char name[100];
+    strcpy(name, log_file_name);
+
+    if (log_file_enabled == true) {
         //If dated files are enabled update name with time and date stamp
         if (date_file) {
-            char name[100] = "log-";
+            strcpy(name, "log-");
             time_t _time = time(NULL);
             char time[100];
             strftime(time, 28, "D-%d-%m-%Y-T-%H-%M-%S.txt", gmtime(&_time));
             strcat(name, time);
-            set_log_file_name(name);
         }
-        update_log_path();
-        clear_log_file();
+        update_log_path(name, log_file_dir);
     }
     log_enable(to_console);
 }
@@ -182,14 +164,12 @@ int logger(STREAM stream, char* file_name, int line, char* tag, const char *form
     //get argument pointers if any is parsed
     va_list argument_pointer;
     va_start(argument_pointer, format);
-
     //Log info to console if enabled
     if (log_enabled) {
         fprint_info(stream, file_name, line, tag);
         retVal = vfprintf(stream, format, argument_pointer);
         fprintf(stream, "\n");
     }
-
     //Append info to file if enabled
     if (log_file_enabled) {
         FILE *file = open_file(log_file_path, "a");
@@ -200,9 +180,7 @@ int logger(STREAM stream, char* file_name, int line, char* tag, const char *form
         }
         fclose(file);
     }
-
     va_end(argument_pointer);
-
     return retVal;
 }
 
@@ -218,12 +196,10 @@ int logger(STREAM stream, char* file_name, int line, char* tag, const char *form
 int catch_null_pointer(char* path, int line, char* name, void* val) {
     if (val == NULL) {
         //Get name of path log was called from
-        char* dup_path = strdup(path);
-        char* base_name = basename(dup_path);
-        logger(stdout, base_name, line, "NULLPTR","Null Pointer in %s, line: %d, var: %s", base_name, line, name);
+        get_base_name(&path);
+        logger(stdout, path, line, "NULLPTR","Null Pointer in %s, line: %d, var: %s", path, line, name);
         return true;
     }
-
     return false;
 }
 
@@ -233,49 +209,48 @@ int catch_null_pointer(char* path, int line, char* name, void* val) {
  * @param name of array
  * @param length of array
  * @param format format for fprintf
- * @param arr the array to print
- * @param f print function
+ * @param array the array to print
+ * @param p_func print function
  */
-void print_array(STREAM stream, char* name, int length, void* arr, void (*f)(STREAM, void*, int)) {
-    if (catch_null(arr)) return;
+void print_array(STREAM stream, char* name, int length, void* array, void (*p_func)(STREAM, void*, int)) {
+    if (catch_null(array)) return;
     fprintf(stream, "%s = {", name);
-    f(stream, arr, 0);
+    p_func(stream, array, 0);
     for (int i = 1; i < length; ++i) {
         fprintf(stream, ", ");
-        f(stream, arr, i);
+        p_func(stream, array, i);
     }
     fprintf(stream, "}\n");
 }
 
 //============================== Array printer utility functions ==============================
-void print_float_from_array(STREAM stream, void* arr, int index){
-    fprintf(stream, "%f", ((float*)arr)[index]);
+void print_float_from_array(STREAM stream, void* array, int index){
+    fprintf(stream, "%f", ((float*)array)[index]);
 }
 
-void print_double_from_array(STREAM stream, void* arr, int index){
-    fprintf(stream, "%lf", ((double*)arr)[index]);
+void print_double_from_array(STREAM stream, void* array, int index){
+    fprintf(stream, "%lf", ((double*)array)[index]);
 }
 
-void print_short_from_array(STREAM stream, void* arr, int index){
-    fprintf(stream, "%hd", ((short*)arr)[index]);
+void print_short_from_array(STREAM stream, void* array, int index){
+    fprintf(stream, "%hd", ((short*)array)[index]);
 }
 
-void print_int_from_array(STREAM stream, void* arr, int index){
-    fprintf(stream, "%d", ((int*)arr)[index]);
+void print_int_from_array(STREAM stream, void* array, int index){
+    fprintf(stream, "%d", ((int*)array)[index]);
 }
 
-void print_long_from_array(STREAM stream, void* arr, int index){
-    fprintf(stream, "%ld", ((long*)arr)[index]);
+void print_long_from_array(STREAM stream, void* array, int index){
+    fprintf(stream, "%ld", ((long*)array)[index]);
 }
 
-void print_bool_from_array(STREAM stream, void* arr, int index) {
-    int val = ((_Bool *) arr)[index];
-    char *boolean = (val == true) ? "True" :  "False";
+void print_bool_from_array(STREAM stream, void* array, int index) {
+    char *boolean = (((_Bool *) array)[index] == true) ? "True" :  "False";
     fprintf(stream, "%s", boolean);
 }
 
-void print_int_bool_from_array(STREAM stream, void* arr, int index){
-    int val = ((int*)arr)[index];
+void print_int_bool_from_array(STREAM stream, void* array, int index){
+    int val = ((int*)array)[index];
     char* boolean = (val == 1) ? "True" : (val == 0) ? "False" : NULL;
     if (boolean != NULL)
         fprintf(stream, "%s", boolean);
@@ -288,33 +263,33 @@ void print_int_bool_from_array(STREAM stream, void* arr, int index){
  * Selects which array printer function to use depending on array_type
  * @param stream output stream
  * @param name name of array
- * @param arr array to print
+ * @param array array to print
  * @param size size of array
  * @param type of array_type
  * @return bool depending on success
  */
-bool print_arr_selector(STREAM stream, char* name, void* arr, int size, array_type type) {
+bool print_arr_selector(STREAM stream, char* name, void* array, int size, array_type type) {
     switch (type) {
         case A_BOOL:
-            if (((int*)arr)[0] > 1)
-                print_array(stream, name, size, arr, print_bool_from_array);
+            if (((int*)array)[0] > 1)
+                print_array(stream, name, size, array, print_bool_from_array);
             else
-                print_array(stream, name, size, arr, print_int_bool_from_array);
+                print_array(stream, name, size, array, print_int_bool_from_array);
             return true;
         case A_DOUBLE:
-            print_array(stream, name, size, arr, print_double_from_array);
+            print_array(stream, name, size, array, print_double_from_array);
             return true;
         case A_INT:
-            print_array(stream, name, size, arr, print_int_from_array);
+            print_array(stream, name, size, array, print_int_from_array);
             return true;
         case A_FLOAT:
-            print_array(stream, name, size, arr, print_float_from_array);
+            print_array(stream, name, size, array, print_float_from_array);
             return true;
         case A_LONG:
-            print_array(stream, name, size, arr, print_long_from_array);
+            print_array(stream, name, size, array, print_long_from_array);
             return true;
         case A_SHORT:
-            print_array(stream, name, size, arr, print_short_from_array);
+            print_array(stream, name, size, array, print_short_from_array);
             return true;
         default:
             return false;
@@ -328,19 +303,19 @@ bool print_arr_selector(STREAM stream, char* name, void* arr, int size, array_ty
  * @param file_name where the functions is called from
  * @param line where the functions is called from
  * @param name of the array
- * @param arr the array to print
+ * @param array the array to print
  * @param size of the array
  * @param type of the array using array_type
  * @return true if successful otherwise false
  */
-int logger_array(STREAM stream, char* file_name, int line, char* name, void* arr, int size, array_type type) {
+int logger_array(STREAM stream, char* file_name, int line, char* name, void* array, int size, array_type type) {
     if (!log_enabled && !log_file_enabled) return -1;
     int retVal;
 
     //Log info to console if enabled
     if (log_enabled) {
         fprint_info(stream, file_name, line, "ARRAY");
-        retVal = print_arr_selector(stream, name, arr, size, type);
+        retVal = print_arr_selector(stream, name, array, size, type);
     }
 
     //Append info to file if enabled
@@ -348,7 +323,7 @@ int logger_array(STREAM stream, char* file_name, int line, char* name, void* arr
         FILE *file = open_file(log_file_path, "a");
         if (file != NULL) {
             fprint_info(file, file_name, line, "ARRAY");
-            retVal = print_arr_selector(file, name, arr, size, type);
+            retVal = print_arr_selector(file, name, array, size, type);
         }
         fclose(file);
     }
