@@ -6,8 +6,7 @@
 #include <math.h>
 #include <io.h>
 #include <libgen.h>
-
-//============== Logger Settings ===============
+//============== Logger Settings ================
 //Whether logging functions are enabled
 static int log_enabled = false;
 //Whether logging to file functions are enabled
@@ -16,7 +15,7 @@ static int log_file_enabled = false;
 static char* log_file_name = "newest_log.txt";
 static char* log_file_dir = "log";
 static char log_file_path[100];
-//==============================================
+//===============================================
 
 int log_enable(int enabled) {
     log_enabled = enabled;
